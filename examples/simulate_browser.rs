@@ -26,10 +26,9 @@ const DEFAULT_SERVICE: &'static str = "www";
 const HOME_PAGE_FILE_NAME: &'static str = "index.html";
 
 fn handle_login() -> std::sync::Arc<std::sync::Mutex<safe_client::client::Client>> {
+    let mut pin = String::new();
     let mut keyword = String::new();
     let mut password = String::new();
-    let mut pin_str = String::new();
-    let pin: u32;
 
     println!("\n\tAccount Creation");
     println!("\t================");
@@ -39,23 +38,21 @@ fn handle_login() -> std::sync::Arc<std::sync::Mutex<safe_client::client::Client
 
     println!("\n\n------------ Enter Password --------------");
     let _ = std::io::stdin().read_line(&mut password);
-
     loop {
         println!("\n\n--------- Enter PIN (4 Digits) -----------");
-        let _ = std::io::stdin().read_line(&mut pin_str);
-        let result = pin_str.trim().parse::<u32>();
-        if result.is_ok() && pin_str.trim().len() == 4 {
-            pin = result.ok().unwrap();
+        let _ = std::io::stdin().read_line(&mut pin);
+        pin = pin.trim().to_string();
+        if pin.parse::<u16>().is_ok() && pin.len() == 4 {
             break;
         }
         println!("ERROR: PIN is not 4 Digits !!");
-        pin_str.clear();
+        pin.clear();
     }
 
     // Account Creation
     {
         println!("\nTrying to create an account ...");
-        let _ = eval_result!(safe_client::client::Client::create_account(&keyword, pin, &password));
+        let _ = eval_result!(safe_client::client::Client::create_account(keyword.clone(), pin.clone(), password.clone()));
         println!("Account Creation Successful !!");
     }
 
@@ -64,7 +61,7 @@ fn handle_login() -> std::sync::Arc<std::sync::Mutex<safe_client::client::Client
 
     // Log into the created account
     println!("\nTrying to log into the created account using supplied credentials ...");
-    std::sync::Arc::new(std::sync::Mutex::new(eval_result!(safe_client::client::Client::log_in(&keyword, pin, &password))))
+    std::sync::Arc::new(std::sync::Mutex::new(eval_result!(safe_client::client::Client::log_in(keyword, pin, password))))
 }
 
 fn create_dns_record(client        : std::sync::Arc<std::sync::Mutex<safe_client::client::Client>>,
