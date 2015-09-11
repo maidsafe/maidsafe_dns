@@ -114,7 +114,7 @@ impl DnsOperations {
 
     /// Get all the Dns-names registered by the user so far in the network.
     pub fn get_all_registered_names(&self) -> Result<Vec<String>, ::errors::DnsError> {
-        Ok(try!(dns_configuration::get_dns_configuaration_data(self.client.clone())).iter().map(|a| a.long_name.clone()).collect())
+        dns_configuration::get_dns_configuaration_data(self.client.clone()).map(|v| v.iter().map(|a| a.long_name.clone()).collect())
     }
 
     /// Get the messaging encryption keys that the user has associated with one's particular Dns-name.
@@ -145,7 +145,7 @@ impl DnsOperations {
                                                                         &::sodiumoxide::crypto::box_::SecretKey,
                                                                         &::sodiumoxide::crypto::box_::Nonce)>) -> Result<(::routing::NameType, u64), ::errors::DnsError> {
         let (_, dns_record) = try!(self.get_housing_sturctured_data_and_dns_record(long_name, data_decryption_keys));
-        Ok(try!(dns_record.services.get(service_name).ok_or(::errors::DnsError::ServiceNotFound)).clone())
+        dns_record.services.get(service_name).map(|v| v.clone()).ok_or(::errors::DnsError::ServiceNotFound)
     }
 
     /// Add a new service for the given Dns-name.
@@ -156,7 +156,7 @@ impl DnsOperations {
                        data_encryption_decryption_keys: Option<(&::sodiumoxide::crypto::box_::PublicKey,
                                                                 &::sodiumoxide::crypto::box_::SecretKey,
                                                                 &::sodiumoxide::crypto::box_::Nonce)>) -> Result<::routing::structured_data::StructuredData, ::errors::DnsError> {
-        Ok(try!(self.add_remove_service_impl(long_name, (new_service.0, Some(new_service.1)), private_signing_key, data_encryption_decryption_keys)))
+        self.add_remove_service_impl(long_name, (new_service.0, Some(new_service.1)), private_signing_key, data_encryption_decryption_keys)
     }
 
     /// Remove a service from the given Dns-name.
@@ -167,12 +167,12 @@ impl DnsOperations {
                           data_encryption_decryption_keys: Option<(&::sodiumoxide::crypto::box_::PublicKey,
                                                                    &::sodiumoxide::crypto::box_::SecretKey,
                                                                    &::sodiumoxide::crypto::box_::Nonce)>) -> Result<::routing::structured_data::StructuredData, ::errors::DnsError> {
-        Ok(try!(self.add_remove_service_impl(long_name, (service_to_remove, None), private_signing_key, data_encryption_decryption_keys)))
+        self.add_remove_service_impl(long_name, (service_to_remove, None), private_signing_key, data_encryption_decryption_keys)
     }
 
     fn find_dns_record(&self, long_name: &String) -> Result<dns_configuration::DnsConfiguation, ::errors::DnsError> {
         let config_vec = try!(dns_configuration::get_dns_configuaration_data(self.client.clone()));
-        Ok(try!(config_vec.iter().find(|config| config.long_name == *long_name).ok_or(::errors::DnsError::DnsRecordNotFound)).clone())
+        config_vec.iter().find(|config| config.long_name == *long_name).map(|v| v.clone()).ok_or(::errors::DnsError::DnsRecordNotFound)
     }
 
     fn add_remove_service_impl(&self,
@@ -227,7 +227,7 @@ impl DnsOperations {
     fn get_housing_structured_data(&self, long_name: &String) -> Result<::routing::structured_data::StructuredData, ::errors::DnsError> {
         let identifier = ::routing::NameType::new(::sodiumoxide::crypto::hash::sha512::hash(long_name.as_bytes()).0);
         let request = ::routing::data::DataRequest::StructuredData(identifier, DNS_TAG);
-        let response_getter = self.client.lock().unwrap().get(request, None);
+        let response_getter = eval_result!(self.client.lock()).get(request, None);
         if let ::routing::data::Data::StructuredData(struct_data) = try!(response_getter.get()) {
             Ok(struct_data)
         } else {
@@ -254,9 +254,9 @@ mod test {
 
         let dns_name = eval_result!(::safe_client::utility::generate_random_string(10));
         let messaging_keypair = ::sodiumoxide::crypto::box_::gen_keypair();
-        let owners = vec![eval_result!(client.lock().unwrap().get_public_signing_key()).clone()];
+        let owners = vec![eval_result!(eval_result!(client.lock()).get_public_signing_key()).clone()];
 
-        let secret_signing_key = eval_result!(client.lock().unwrap().get_secret_signing_key()).clone();
+        let secret_signing_key = eval_result!(eval_result!(client.lock()).get_secret_signing_key()).clone();
 
         // Register
         let mut struct_data = eval_result!(dns_operations.register_dns(dns_name.clone(),
@@ -267,7 +267,7 @@ mod test {
                                                                        &secret_signing_key,
                                                                        None));
 
-        client.lock().unwrap().put(::routing::data::Data::StructuredData(struct_data), None);
+        eval_result!(client.lock()).put(::routing::data::Data::StructuredData(struct_data), None);
 
         // Get Services
         let services = eval_result!(dns_operations.get_all_services(&dns_name, None));
@@ -288,7 +288,7 @@ mod test {
 
         // Delete
         struct_data = eval_result!(dns_operations.delete_dns(&dns_name, &secret_signing_key));
-        client.lock().unwrap().delete(::routing::data::Data::StructuredData(struct_data), None);
+        eval_result!(client.lock()).delete(::routing::data::Data::StructuredData(struct_data), None);
 
         // Registering again should be allowed
         let _ = eval_result!(dns_operations.register_dns(dns_name,
@@ -312,9 +312,9 @@ mod test {
                                 ("blog".to_string(),    (::routing::NameType::new([124; 64]), 15000)),
                                 ("bad-ass".to_string(), (::routing::NameType::new([124; 64]), 15000))];
 
-        let owners = vec![eval_result!(client.lock().unwrap().get_public_signing_key()).clone()];
+        let owners = vec![eval_result!(eval_result!(client.lock()).get_public_signing_key()).clone()];
 
-        let secret_signing_key = eval_result!(client.lock().unwrap().get_secret_signing_key()).clone();
+        let secret_signing_key = eval_result!(eval_result!(client.lock()).get_secret_signing_key()).clone();
 
         // Register
         let mut struct_data = eval_result!(dns_operations.register_dns(dns_name.clone(),
@@ -325,7 +325,7 @@ mod test {
                                                                        &secret_signing_key,
                                                                        None));
 
-        client.lock().unwrap().put(::routing::data::Data::StructuredData(struct_data), None);
+        eval_result!(client.lock()).put(::routing::data::Data::StructuredData(struct_data), None);
 
         // Get all dns-names
         let dns_records_vec = eval_result!(dns_operations.get_all_registered_names());
@@ -350,7 +350,7 @@ mod test {
         // Remove a service
         let removed_service = services.remove(1);
         struct_data = eval_result!(dns_operations.remove_service(&dns_name, removed_service.0.clone(), &secret_signing_key, None));
-        client.lock().unwrap().post(::routing::data::Data::StructuredData(struct_data), None);
+        eval_result!(client.lock()).post(::routing::data::Data::StructuredData(struct_data), None);
 
         // Get all services
         let services_vec = eval_result!(dns_operations.get_all_services(&dns_name, None));
@@ -369,7 +369,7 @@ mod test {
         services.push(("added-service".to_string(), (::routing::NameType::new([126; 64]), 15000)));
         let services_size = services.len();
         struct_data = eval_result!(dns_operations.add_service(&dns_name, services[services_size - 1].clone(), &secret_signing_key, None));
-        client.lock().unwrap().post(::routing::data::Data::StructuredData(struct_data), None);
+        eval_result!(client.lock()).post(::routing::data::Data::StructuredData(struct_data), None);
 
         // Get all services
         let services_vec = eval_result!(dns_operations.get_all_services(&dns_name, None));
