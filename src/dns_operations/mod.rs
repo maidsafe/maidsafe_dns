@@ -216,7 +216,7 @@ impl DnsOperations {
         }
     }
 
-    fn get_housing_sturctured_data_and_dns_record(&self,
+    fn get_housing_structured_data_and_dns_record(&self,
                                                   long_name           : &String,
                                                   data_decryption_keys: Option<(&::sodiumoxide::crypto::box_::PublicKey,
                                                                                 &::sodiumoxide::crypto::box_::SecretKey,
