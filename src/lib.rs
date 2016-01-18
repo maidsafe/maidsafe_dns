@@ -48,8 +48,10 @@ extern crate safe_nfs;
 extern crate safe_core;
 extern crate sodiumoxide;
 extern crate rustc_serialize;
-#[macro_use] extern crate log;
-#[macro_use] extern crate maidsafe_utilities;
+#[macro_use]
+extern crate log;
+#[macro_use]
+extern crate maidsafe_utilities;
 
 /// Safe-Dns errors
 pub mod errors;
