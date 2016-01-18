@@ -15,7 +15,17 @@
 // Please review the Licences for the specific language governing permissions and limitations
 // relating to use of the SAFE Network Software.
 
+use std::sync::{Arc, Mutex};
+
+use sodiumoxide::crypto::box_;
+
+use errors::DnsError;
 use maidsafe_utilities::serialisation::{serialise, deserialise};
+use safe_core::client::Client;
+use safe_nfs::errors::NfsError::FileAlreadyExistsWithSameName;
+use safe_nfs::helper::directory_helper::DirectoryHelper;
+use safe_nfs::helper::file_helper::FileHelper;
+use safe_nfs::helper::writer::Mode;
 
 const DNS_CONFIG_DIR_NAME: &'static str = "DnsReservedDirectory";
 const DNS_CONFIG_FILE_NAME: &'static str = "DnsConfigurationFile";
@@ -23,30 +33,29 @@ const DNS_CONFIG_FILE_NAME: &'static str = "DnsConfigurationFile";
 #[derive(Clone, Debug, Eq, PartialEq, RustcEncodable, RustcDecodable)]
 pub struct DnsConfiguation {
     pub long_name         : String,
-    pub encryption_keypair: (::sodiumoxide::crypto::box_::PublicKey,
-                             ::sodiumoxide::crypto::box_::SecretKey),
+    pub encryption_keypair: (box_::PublicKey, box_::SecretKey),
 
 }
 
-pub fn initialise_dns_configuaration(client: ::std::sync::Arc<::std::sync::Mutex<::safe_core::client::Client>>) -> Result<(), ::errors::DnsError> {
-    let dir_helper = ::safe_nfs::helper::directory_helper::DirectoryHelper::new(client.clone());
+pub fn initialise_dns_configuaration(client: Arc<Mutex<Client>>) -> Result<(), DnsError> {
+    let dir_helper = DirectoryHelper::new(client.clone());
     let dir_listing = try!(dir_helper.get_configuration_directory_listing(DNS_CONFIG_DIR_NAME.to_string()));
-    let file_helper = ::safe_nfs::helper::file_helper::FileHelper::new(client.clone());
+    let file_helper = FileHelper::new(client.clone());
     match file_helper.create(DNS_CONFIG_FILE_NAME.to_string(), vec![], dir_listing) {
         Ok(writer) => {
             let _ = try!(writer.close());
             Ok(())
         },
-        Err(::safe_nfs::errors::NfsError::FileAlreadyExistsWithSameName) => Ok(()),
-        Err(error) => Err(::errors::DnsError::from(error)),
+        Err(FileAlreadyExistsWithSameName) => Ok(()),
+        Err(error) => Err(DnsError::from(error)),
     }
 }
 
-pub fn get_dns_configuaration_data(client: ::std::sync::Arc<::std::sync::Mutex<::safe_core::client::Client>>) -> Result<Vec<DnsConfiguation>, ::errors::DnsError> {
-    let dir_helper = ::safe_nfs::helper::directory_helper::DirectoryHelper::new(client.clone());
+pub fn get_dns_configuaration_data(client: Arc<Mutex<Client>>) -> Result<Vec<DnsConfiguation>, DnsError> {
+    let dir_helper = DirectoryHelper::new(client.clone());
     let dir_listing = try!(dir_helper.get_configuration_directory_listing(DNS_CONFIG_DIR_NAME.to_string()));
-    let file = try!(dir_listing.get_files().iter().find(|file| file.get_name() == DNS_CONFIG_FILE_NAME).ok_or(::errors::DnsError::DnsConfigFileNotFoundOrCorrupted));
-    let file_helper = ::safe_nfs::helper::file_helper::FileHelper::new(client.clone());
+    let file = try!(dir_listing.get_files().iter().find(|file| file.get_name() == DNS_CONFIG_FILE_NAME).ok_or(DnsError::DnsConfigFileNotFoundOrCorrupted));
+    let file_helper = FileHelper::new(client.clone());
     debug!("Reading dns configuration data from file ...");
     let mut reader = file_helper.read(file);
     let size = reader.size();
@@ -57,13 +66,13 @@ pub fn get_dns_configuaration_data(client: ::std::sync::Arc<::std::sync::Mutex<:
     }
 }
 
-pub fn write_dns_configuaration_data(client: ::std::sync::Arc<::std::sync::Mutex<::safe_core::client::Client>>,
-                                     config: &Vec<DnsConfiguation>) -> Result<(), ::errors::DnsError> {
-    let dir_helper = ::safe_nfs::helper::directory_helper::DirectoryHelper::new(client.clone());
+pub fn write_dns_configuaration_data(client: Arc<Mutex<Client>>,
+                                     config: &Vec<DnsConfiguation>) -> Result<(), DnsError> {
+    let dir_helper = DirectoryHelper::new(client.clone());
     let dir_listing = try!(dir_helper.get_configuration_directory_listing(DNS_CONFIG_DIR_NAME.to_string()));
-    let file = try!(dir_listing.get_files().iter().find(|file| file.get_name() == DNS_CONFIG_FILE_NAME).ok_or(::errors::DnsError::DnsConfigFileNotFoundOrCorrupted)).clone();
-    let file_helper = ::safe_nfs::helper::file_helper::FileHelper::new(client.clone());
-    let mut writer = try!(file_helper.update_content(file, ::safe_nfs::helper::writer::Mode::Overwrite, dir_listing));
+    let file = try!(dir_listing.get_files().iter().find(|file| file.get_name() == DNS_CONFIG_FILE_NAME).ok_or(DnsError::DnsConfigFileNotFoundOrCorrupted)).clone();
+    let file_helper = FileHelper::new(client.clone());
+    let mut writer = try!(file_helper.update_content(file, Mode::Overwrite, dir_listing));
     debug!("Writing dns configuration data ...");
     writer.write(&try!(serialise(&config)), 0);
     let _ = try!(writer.close());
@@ -73,10 +82,13 @@ pub fn write_dns_configuaration_data(client: ::std::sync::Arc<::std::sync::Mutex
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::sync::{Arc, Mutex};
+    use sodiumoxide::crypto::box_;
+    use safe_core::utility::{self, test_utils};
 
     #[test]
     fn read_write_dns_configuration_file() {
-        let client = ::std::sync::Arc::new(::std::sync::Mutex::new(unwrap_result!(::safe_core::utility::test_utils::get_client())));
+        let client = Arc::new(Mutex::new(unwrap_result!(test_utils::get_client())));
 
         // Initialise Dns Configuration File
         unwrap_result!(initialise_dns_configuaration(client.clone()));
@@ -85,10 +97,10 @@ mod test {
         let mut config_vec = unwrap_result!(get_dns_configuaration_data(client.clone()));
         assert_eq!(config_vec.len(), 0);
 
-        let long_name = unwrap_result!(::safe_core::utility::generate_random_string(10));
+        let long_name = unwrap_result!(utility::generate_random_string(10));
 
         // Put in the 1st record
-        let mut keypair = ::sodiumoxide::crypto::box_::gen_keypair();
+        let mut keypair = box_::gen_keypair();
         let config_0 = DnsConfiguation {
             long_name         : long_name.clone(),
             encryption_keypair: (keypair.0, keypair.1),
@@ -104,7 +116,7 @@ mod test {
         assert_eq!(config_vec[0], config_0);
 
         // Modify the content
-        keypair = ::sodiumoxide::crypto::box_::gen_keypair();
+        keypair = box_::gen_keypair();
         let config_1 = DnsConfiguation {
             long_name         : long_name,
             encryption_keypair: (keypair.0, keypair.1),

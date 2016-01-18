@@ -17,16 +17,19 @@
 
 use maidsafe_utilities::serialisation::SerialisationError;
 
+use safe_core::errors::CoreError;
+use safe_nfs::errors::{NfsError, NFS_ERROR_START_RANGE};
+
 /// Intended for converting DNS Errors into numeric codes for propagating some error information
 /// across FFI boundaries and specially to C.
-pub const DNS_ERROR_START_RANGE: i32 = ::safe_nfs::errors::NFS_ERROR_START_RANGE - 500;
+pub const DNS_ERROR_START_RANGE: i32 = NFS_ERROR_START_RANGE - 500;
 
 /// Safe-Dns specific errors
 pub enum DnsError {
     /// Errors from Safe-Client
-    CoreError(::safe_core::errors::CoreError),
+    CoreError(CoreError),
     /// Errors from Safe-Nfs
-    NfsError(::safe_nfs::errors::NfsError),
+    NfsError(NfsError),
     /// Dns record already exists
     DnsNameAlreadyRegistered,
     /// Dns record not found
@@ -48,14 +51,14 @@ impl From<SerialisationError> for DnsError {
         DnsError::UnsuccessfulEncodeDecode(error)
     }
 }
-impl From<::safe_core::errors::CoreError> for DnsError {
-    fn from(error: ::safe_core::errors::CoreError) -> DnsError {
+impl From<CoreError> for DnsError {
+    fn from(error: CoreError) -> DnsError {
         DnsError::CoreError(error)
     }
 }
 
-impl From<::safe_nfs::errors::NfsError> for DnsError {
-    fn from(error: ::safe_nfs::errors::NfsError) -> DnsError {
+impl From<NfsError> for DnsError {
+    fn from(error: NfsError) -> DnsError {
         DnsError::NfsError(error)
     }
 }
