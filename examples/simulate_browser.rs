@@ -21,7 +21,8 @@ extern crate safe_dns;
 extern crate safe_core;
 extern crate safe_nfs;
 extern crate sodiumoxide;
-#[macro_use] extern crate maidsafe_utilities;
+#[macro_use]
+extern crate maidsafe_utilities;
 
 use std::sync::{Arc, Mutex};
 
@@ -66,7 +67,9 @@ fn handle_login() -> Arc<Mutex<Client>> {
     // Account Creation
     {
         println!("\nTrying to create an account ...");
-        let _ = unwrap_result!(Client::create_account(keyword.clone(), pin.clone(), password.clone()));
+        let _ = unwrap_result!(Client::create_account(keyword.clone(),
+                                                      pin.clone(),
+                                                      password.clone()));
         println!("Account Creation Successful !!");
     }
 
@@ -78,17 +81,20 @@ fn handle_login() -> Arc<Mutex<Client>> {
     Arc::new(Mutex::new(unwrap_result!(Client::log_in(keyword, pin, password))))
 }
 
-fn create_dns_record(client        : Arc<Mutex<Client>>,
-                     dns_operations: &DnsOperations) -> Result<(), safe_dns::errors::DnsError> {
+fn create_dns_record(client: Arc<Mutex<Client>>,
+                     dns_operations: &DnsOperations)
+                     -> Result<(), safe_dns::errors::DnsError> {
     println!("\n\n    Create Dns Record");
-    println!(    "    =================");
-    println!("\nEnter Dns Name (eg., pepsico.com [Note: more than one \".\"s are not allowed in this simple example]):");
+    println!("    =================");
+    println!("\nEnter Dns Name (eg., pepsico.com [Note: more than one \".\"s are not allowed in \
+              this simple example]):");
     let mut long_name = String::new();
     let _ = std::io::stdin().read_line(&mut long_name);
     long_name = long_name.trim().to_string();
 
     println!("\nGenerating messaging ecryption keys for you...");
-    let (public_messaging_encryption_key, secret_messaging_encryption_key) = box_::gen_keypair();
+    let (public_messaging_encryption_key,
+         secret_messaging_encryption_key) = box_::gen_keypair();
 
     println!("Registering Dns...");
 
@@ -104,10 +110,11 @@ fn create_dns_record(client        : Arc<Mutex<Client>>,
     Ok(try!(unwrap_result!(client.lock()).put(Data::StructuredData(dns_struct_data), None)))
 }
 
-fn delete_dns_record(client        : Arc<Mutex<Client>>,
-                     dns_operations: &DnsOperations) -> Result<(), DnsError> {
+fn delete_dns_record(client: Arc<Mutex<Client>>,
+                     dns_operations: &DnsOperations)
+                     -> Result<(), DnsError> {
     println!("\n\n    Delete Dns Record");
-    println!(    "    =================");
+    println!("    =================");
     println!("\nEnter Dns Name (eg., pepsico.com):");
     let mut long_name = String::new();
     let _ = std::io::stdin().read_line(&mut long_name);
@@ -123,7 +130,7 @@ fn delete_dns_record(client        : Arc<Mutex<Client>>,
 
 fn display_dns_records(dns_operations: &DnsOperations) -> Result<(), DnsError> {
     println!("\n\n    Display Dns Records");
-    println!(    "    ===================");
+    println!("    ===================");
     println!("\nRegistered Dns Names (fetching...):");
     let record_names = try!(dns_operations.get_all_registered_names());
     for it in record_names.iter().enumerate() {
@@ -132,10 +139,9 @@ fn display_dns_records(dns_operations: &DnsOperations) -> Result<(), DnsError> {
     Ok(())
 }
 
-fn add_service(client        : Arc<Mutex<Client>>,
-               dns_operations: &DnsOperations) -> Result<(), DnsError> {
+fn add_service(client: Arc<Mutex<Client>>, dns_operations: &DnsOperations) -> Result<(), DnsError> {
     println!("\n\n    Add Service");
-    println!(    "    ===========");
+    println!("    ===========");
     println!("\nEnter Dns Name (eg., pepsico.com):");
     let mut long_name = String::new();
     let _ = std::io::stdin().read_line(&mut long_name);
@@ -182,10 +188,11 @@ fn add_service(client        : Arc<Mutex<Client>>,
     Ok(try!(client.lock().unwrap().post(Data::StructuredData(struct_data), None)))
 }
 
-fn remove_service(client        : Arc<Mutex<Client>>,
-                  dns_operations: &DnsOperations) -> Result<(), DnsError> {
+fn remove_service(client: Arc<Mutex<Client>>,
+                  dns_operations: &DnsOperations)
+                  -> Result<(), DnsError> {
     println!("\n\n    Remove Service");
-    println!(    "    ==============");
+    println!("    ==============");
     println!("\nEnter Dns Name (eg., pepsico.com):");
     let mut long_name = String::new();
     let _ = std::io::stdin().read_line(&mut long_name);
@@ -199,13 +206,16 @@ fn remove_service(client        : Arc<Mutex<Client>>,
     println!("Removing Service...");
 
     let secret_signing_key = try!(client.lock().unwrap().get_secret_signing_key()).clone();
-    let struct_data = try!(dns_operations.remove_service(&long_name, service_name, &secret_signing_key, None));
+    let struct_data = try!(dns_operations.remove_service(&long_name,
+                                                         service_name,
+                                                         &secret_signing_key,
+                                                         None));
     Ok(try!(client.lock().unwrap().post(Data::StructuredData(struct_data), None)))
 }
 
 fn display_services(dns_operations: &DnsOperations) -> Result<(), DnsError> {
     println!("\n\n    Display Services");
-    println!(    "    ================");
+    println!("    ================");
     println!("\nEnter Dns Name (eg., pepsico.com):");
     let mut long_name = String::new();
     let _ = std::io::stdin().read_line(&mut long_name);
@@ -219,62 +229,94 @@ fn display_services(dns_operations: &DnsOperations) -> Result<(), DnsError> {
     Ok(())
 }
 
-fn parse_url_and_get_home_page(client        : Arc<Mutex<Client>>,
-                               dns_operations: &DnsOperations) -> Result<(), DnsError> {
+fn parse_url_and_get_home_page(client: Arc<Mutex<Client>>,
+                               dns_operations: &DnsOperations)
+                               -> Result<(), DnsError> {
     println!("\n\n    Parse URL");
-    println!(    "    =========");
-    println!("\nEnter SAFE-Url (eg., safe:lays.pepsico.com ie., \"safe:[<service-name>.]<dns-name>\"):");
+    println!("    =========");
+    println!("\nEnter SAFE-Url (eg., safe:lays.pepsico.com ie., \
+              \"safe:[<service-name>.]<dns-name>\"):");
     let mut url = String::new();
     let _ = std::io::stdin().read_line(&mut url);
     url = url.trim().to_string();
 
-    let re_with_service = try!(regex::Regex::new(r"safe:([^.]+?)\.([^.]+?\.[^.]+)$").map_err(|_| safe_dns::errors::DnsError::Unexpected("Failed to form Regular-Expression !!".to_string())));
-    let re_without_service = try!(regex::Regex::new(r"safe:([^.]+?\.[^.]+)$").map_err(|_| safe_dns::errors::DnsError::Unexpected("Failed to form Regular-Expression !!".to_string())));
+    let re_with_service = try!(regex::Regex::new(r"safe:([^.]+?)\.([^.]+?\.[^.]+)$")
+                                   .map_err(|_| {
+                                       safe_dns::errors::DnsError::Unexpected("Failed to form \
+                                                                               Regular-Expression \
+                                                                               !!"
+                                                                                  .to_string())
+                                   }));
+    let re_without_service = try!(regex::Regex::new(r"safe:([^.]+?\.[^.]+)$").map_err(|_| {
+        safe_dns::errors::DnsError::Unexpected("Failed to form Regular-Expression !!".to_string())
+    }));
 
     let long_name;
     let service_name;
 
     if re_with_service.is_match(&url) {
-        let captures = try!(re_with_service.captures(&url).ok_or(DnsError::Unexpected("Could not capture items in Url !!".to_string())));
-        let caps_0 = try!(captures.at(1).ok_or(DnsError::Unexpected("Could not access a capture !!".to_string())));
-        let caps_1 = try!(captures.at(2).ok_or(DnsError::Unexpected("Could not access a capture !!".to_string())));
+        let captures = try!(re_with_service.captures(&url)
+                                           .ok_or(DnsError::Unexpected("Could not capture \
+                                                                        items in Url !!"
+                                                                           .to_string())));
+        let caps_0 = try!(captures.at(1)
+                                  .ok_or(DnsError::Unexpected("Could not access a capture !!"
+                                                                  .to_string())));
+        let caps_1 = try!(captures.at(2)
+                                  .ok_or(DnsError::Unexpected("Could not access a capture !!"
+                                                                  .to_string())));
 
         long_name = caps_1.to_string();
         service_name = caps_0.to_string();
     } else if re_without_service.is_match(&url) {
-        let captures = try!(re_without_service.captures(&url).ok_or(DnsError::Unexpected("Could not capture items in Url !!".to_string())));
-        let caps_0 = try!(captures.at(1).ok_or(DnsError::Unexpected("Could not access a capture !!".to_string())));
+        let captures = try!(re_without_service.captures(&url)
+                                              .ok_or(DnsError::Unexpected("Could not capture \
+                                                                           items in Url !!"
+                                                                              .to_string())));
+        let caps_0 = try!(captures.at(1)
+                                  .ok_or(DnsError::Unexpected("Could not access a capture !!"
+                                                                  .to_string())));
 
         long_name = caps_0.to_string();
         service_name = DEFAULT_SERVICE.to_string();
     } else {
-        return Err(safe_dns::errors::DnsError::Unexpected("Malformed Url !!".to_string()))
+        return Err(safe_dns::errors::DnsError::Unexpected("Malformed Url !!".to_string()));
     }
 
     println!("Fetching data...");
 
-    let dir_key = try!(dns_operations.get_service_home_directory_key(&long_name, &service_name, None));
+    let dir_key = try!(dns_operations.get_service_home_directory_key(&long_name,
+                                                                     &service_name,
+                                                                     None));
     let directory_helper = DirectoryHelper::new(client.clone());
     let dir_listing = try!(directory_helper.get(&dir_key));
 
-    let file = try!(dir_listing.get_files().iter().find(|a| *a.get_name() == HOME_PAGE_FILE_NAME.to_string())
-                                                       .ok_or(DnsError::Unexpected("Could not find homepage !!".to_string())));
+    let file = try!(dir_listing.get_files()
+                               .iter()
+                               .find(|a| *a.get_name() == HOME_PAGE_FILE_NAME.to_string())
+                               .ok_or(DnsError::Unexpected("Could not find homepage !!"
+                                                               .to_string())));
     let file_helper = FileHelper::new(client.clone());
     let mut reader = file_helper.read(file);
     let size = reader.size();
     let content = try!(reader.read(0, size));
 
     println!("\n-----------------------------------------------------");
-    println!(  "                 Home Page Contents");
-    println!(  "-----------------------------------------------------\n");
-    println!("{}", try!(String::from_utf8(content).map_err(|_| DnsError::Unexpected("Cannot convert contents to displayable string !!".to_string()))));
+    println!("                 Home Page Contents");
+    println!("-----------------------------------------------------\n");
+    println!("{}",
+             try!(String::from_utf8(content).map_err(|_| {
+                 DnsError::Unexpected("Cannot convert contents to displayable string !!"
+                                          .to_string())
+             })));
 
     Ok(())
 }
 
 fn main() {
     let client = handle_login();
-    let unregistered_client = Arc::new(Mutex::new(unwrap_result!(Client::create_unregistered_client())));
+    let unregistered_client =
+        Arc::new(Mutex::new(unwrap_result!(Client::create_unregistered_client())));
     println!("Account Login Successful !!");
 
     println!("Initialising Dns...");
@@ -301,28 +343,42 @@ fn main() {
             let mut error = None;
 
             match option {
-                1 => if let Err(err) = create_dns_record(client.clone(), &dns_operations) {
-                    error = Some(err);
-                },
-                2 => if let Err(err) = delete_dns_record(client.clone(), &dns_operations) {
-                    error = Some(err);
-                },
-                3 => if let Err(err) = display_dns_records(&dns_operations) {
-                    error = Some(err);
-                },
-                4 => if let Err(err) = add_service(client.clone(), &dns_operations) {
-                    error = Some(err);
-                },
-                5 => if let Err(err) = remove_service(client.clone(), &dns_operations) {
-                    error = Some(err);
-                },
-                6 => if let Err(err) = display_services(&dns_operations_unregistered) {
-                    error = Some(err);
-                },
-                7 => if let Err(err) = parse_url_and_get_home_page(unregistered_client.clone(),
-                                                                   &dns_operations_unregistered) {
-                    error = Some(err);
-                },
+                1 => {
+                    if let Err(err) = create_dns_record(client.clone(), &dns_operations) {
+                        error = Some(err);
+                    }
+                }
+                2 => {
+                    if let Err(err) = delete_dns_record(client.clone(), &dns_operations) {
+                        error = Some(err);
+                    }
+                }
+                3 => {
+                    if let Err(err) = display_dns_records(&dns_operations) {
+                        error = Some(err);
+                    }
+                }
+                4 => {
+                    if let Err(err) = add_service(client.clone(), &dns_operations) {
+                        error = Some(err);
+                    }
+                }
+                5 => {
+                    if let Err(err) = remove_service(client.clone(), &dns_operations) {
+                        error = Some(err);
+                    }
+                }
+                6 => {
+                    if let Err(err) = display_services(&dns_operations_unregistered) {
+                        error = Some(err);
+                    }
+                }
+                7 => {
+                    if let Err(err) = parse_url_and_get_home_page(unregistered_client.clone(),
+                                                                  &dns_operations_unregistered) {
+                        error = Some(err);
+                    }
+                }
                 8 => break,
                 _ => println!("\nUnrecognised option !!"),
             }

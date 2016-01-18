@@ -72,15 +72,15 @@ impl<'a> From<&'a str> for DnsError {
 impl Into<i32> for DnsError {
     fn into(self) -> i32 {
         match self {
-            DnsError::CoreError(error)                 => error.into(),
-            DnsError::NfsError(error)                  => error.into(),
-            DnsError::DnsNameAlreadyRegistered         => DNS_ERROR_START_RANGE,
-            DnsError::DnsRecordNotFound                => DNS_ERROR_START_RANGE - 1,
-            DnsError::ServiceAlreadyExists             => DNS_ERROR_START_RANGE - 2,
-            DnsError::ServiceNotFound                  => DNS_ERROR_START_RANGE - 3,
+            DnsError::CoreError(error) => error.into(),
+            DnsError::NfsError(error) => error.into(),
+            DnsError::DnsNameAlreadyRegistered => DNS_ERROR_START_RANGE,
+            DnsError::DnsRecordNotFound => DNS_ERROR_START_RANGE - 1,
+            DnsError::ServiceAlreadyExists => DNS_ERROR_START_RANGE - 2,
+            DnsError::ServiceNotFound => DNS_ERROR_START_RANGE - 3,
             DnsError::DnsConfigFileNotFoundOrCorrupted => DNS_ERROR_START_RANGE - 4,
-            DnsError::Unexpected(_)                    => DNS_ERROR_START_RANGE - 5,
-            DnsError::UnsuccessfulEncodeDecode(_)      => DNS_ERROR_START_RANGE - 6,
+            DnsError::Unexpected(_) => DNS_ERROR_START_RANGE - 5,
+            DnsError::UnsuccessfulEncodeDecode(_) => DNS_ERROR_START_RANGE - 6,
         }
     }
 }
@@ -88,15 +88,19 @@ impl Into<i32> for DnsError {
 impl ::std::fmt::Debug for DnsError {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
         match *self {
-            DnsError::CoreError(ref error)              => write!(f, "DnsError::CoreError -> {:?}", error),
-            DnsError::NfsError(ref error)               => write!(f, "DnsError::NfsError -> {:?}", error),
-            DnsError::DnsNameAlreadyRegistered          => write!(f, "DnsError::DnsNameAlreadyRegistered"),
-            DnsError::DnsRecordNotFound                 => write!(f, "DnsError::DnsRecordNotFound"),
-            DnsError::ServiceAlreadyExists              => write!(f, "DnsError::ServiceAlreadyExists"),
-            DnsError::ServiceNotFound                   => write!(f, "DnsError::ServiceNotFound"),
-            DnsError::DnsConfigFileNotFoundOrCorrupted  => write!(f, "DnsError::DnsConfigFileNotFoundOrCorrupted"),
-            DnsError::Unexpected(ref error)             => write!(f, "DnsError::Unexpected::{{{:?}}}", error),
-            DnsError::UnsuccessfulEncodeDecode(ref err) => write!(f, "DnsError::UnsuccessfulEncodeDecode -> {:?}", err),
+            DnsError::CoreError(ref error) => write!(f, "DnsError::CoreError -> {:?}", error),
+            DnsError::NfsError(ref error) => write!(f, "DnsError::NfsError -> {:?}", error),
+            DnsError::DnsNameAlreadyRegistered => write!(f, "DnsError::DnsNameAlreadyRegistered"),
+            DnsError::DnsRecordNotFound => write!(f, "DnsError::DnsRecordNotFound"),
+            DnsError::ServiceAlreadyExists => write!(f, "DnsError::ServiceAlreadyExists"),
+            DnsError::ServiceNotFound => write!(f, "DnsError::ServiceNotFound"),
+            DnsError::DnsConfigFileNotFoundOrCorrupted => {
+                write!(f, "DnsError::DnsConfigFileNotFoundOrCorrupted")
+            }
+            DnsError::Unexpected(ref error) => write!(f, "DnsError::Unexpected::{{{:?}}}", error),
+            DnsError::UnsuccessfulEncodeDecode(ref err) => {
+                write!(f, "DnsError::UnsuccessfulEncodeDecode -> {:?}", err)
+            }
         }
     }
 }
